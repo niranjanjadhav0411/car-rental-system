@@ -19,7 +19,7 @@ public class User {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    private String role;
+    private Role role;
 
     public Long getId() {
         return id;
@@ -49,11 +49,10 @@ public class User {
         this.password = password;
     }
 
-    public GrantedAuthority getRole() {
+    public Role getRole() {
         return role;
     }
 
     public void setRole(Role role) {
-        this.role = role;
     }
 }

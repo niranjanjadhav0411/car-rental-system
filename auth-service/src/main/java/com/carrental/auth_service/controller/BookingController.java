@@ -15,7 +15,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 public class BookingController {
 
@@ -27,10 +26,7 @@ public class BookingController {
             @Valid @RequestBody BookingRequest request,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        if (userDetails == null) {
-            throw new RuntimeException("Unauthorized");
-        }
-
+        // 🔐 Spring Security guarantees this is NOT null
         Booking booking = bookingService.createBooking(
                 request,
                 userDetails.getUsername()
@@ -53,14 +49,9 @@ public class BookingController {
     public ResponseEntity<List<Booking>> getMyBookings(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        if (userDetails == null) {
-            throw new RuntimeException("Unauthorized");
-        }
-
-        List<Booking> bookings =
-                bookingService.getUserBookings(userDetails.getUsername());
-
-        return ResponseEntity.ok(bookings);
+        return ResponseEntity.ok(
+                bookingService.getUserBookings(userDetails.getUsername())
+        );
     }
 
     // ================= CANCEL BOOKING =================
@@ -69,12 +60,7 @@ public class BookingController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        if (userDetails == null) {
-            throw new RuntimeException("Unauthorized");
-        }
-
         bookingService.cancelBooking(id, userDetails.getUsername());
-
         return ResponseEntity.ok("Booking cancelled successfully");
     }
 }

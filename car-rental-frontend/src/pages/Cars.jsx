@@ -1,0 +1,76 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { getAllCars } from "../services/carService";
+
+export default function Cars() {
+  const [cars, setCars] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getAllCars()
+      .then((res) => setCars(res.data))
+      .catch((err) => {
+        console.error(err);
+        setError("Failed to load cars");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <p className="text-center py-20 text-gray-400">Loading cars...</p>;
+  }
+
+  if (error) {
+    return <p className="text-center py-20 text-red-400">{error}</p>;
+  }
+
+  return (
+    <section className="py-10 max-w-7xl mx-auto px-4">
+      <h1 className="text-3xl sm:text-4xl font-bold text-cyan-400 mb-8 text-center">
+        Available Cars
+      </h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {cars.map((car) => (
+          <div
+            key={car.id}
+            className="bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:scale-[1.02] transition"
+          >
+            <img
+              src={
+                car.image ||
+                "https://images.unsplash.com/photo-1555215695-3004980ad54e"
+              }
+              alt={`${car.brand} ${car.model}`}
+              className="h-48 w-full object-cover"
+            />
+
+            <div className="p-5">
+              <h3 className="text-xl font-semibold">
+                {car.brand} {car.model}
+              </h3>
+
+              <p className="text-gray-400 mt-1">₹{car.pricePerDay} / day</p>
+
+              <p
+                className={`mt-1 text-sm ${
+                  car.available ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {car.available ? "Available" : "Not Available"}
+              </p>
+
+              <Link
+                to={`/cars/${car.id}`}
+                className="mt-4 block w-full text-center py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 font-semibold"
+              >
+                View Details
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}

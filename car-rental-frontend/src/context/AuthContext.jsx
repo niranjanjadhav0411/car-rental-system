@@ -3,7 +3,6 @@ import { createContext, useContext, useState } from "react";
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  // ✅ Safe restore from localStorage
   const getInitialAuth = () => {
     try {
       const storedUser = localStorage.getItem("user");

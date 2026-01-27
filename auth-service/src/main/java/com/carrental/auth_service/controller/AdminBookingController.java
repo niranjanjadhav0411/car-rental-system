@@ -6,6 +6,7 @@ import com.carrental.auth_service.entity.BookingStatus;
 import com.carrental.auth_service.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/bookings")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminBookingController {
 
     private final BookingService bookingService;
@@ -30,13 +32,13 @@ public class AdminBookingController {
     @PutMapping("/{id}/approve")
     public ResponseEntity<String> approve(@PathVariable Long id) {
         bookingService.updateBookingStatus(id, BookingStatus.CONFIRMED);
-        return ResponseEntity.ok("Approved");
+        return ResponseEntity.ok("Booking approved successfully");
     }
 
     @PutMapping("/{id}/reject")
     public ResponseEntity<String> reject(@PathVariable Long id) {
         bookingService.updateBookingStatus(id, BookingStatus.REJECTED);
-        return ResponseEntity.ok("Rejected");
+        return ResponseEntity.ok("Booking rejected successfully");
     }
 
     private BookingResponse mapToResponse(Booking b) {

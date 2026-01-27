@@ -5,27 +5,38 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "car")
+@Table(name = "cars")
 public class Car {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String brand;
+
+    @Column(nullable = false)
     private String model;
+
     private String image;
 
-    @Column(name = "price_per_day")
+    @Column(name = "price_per_day", nullable = false)
     private double pricePerDay;
-    private boolean available;
 
-    private String name;
-    public String getName() {
-        return name;
-    }
+    @Column(nullable = false)
+    private boolean available = true;
+
+    @OneToMany(
+            mappedBy = "car",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Booking> bookings = new ArrayList<>();
 }

@@ -1,53 +1,55 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const getInitialAuth = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
     try {
       const storedUser = localStorage.getItem("user");
       const token = localStorage.getItem("token");
 
-      if (!storedUser || storedUser === "undefined" || !token) {
-        return { user: null, loading: false };
+      if (storedUser && token) {
+        setUser(JSON.parse(storedUser));
       }
-
-      return {
-        user: JSON.parse(storedUser),
-        loading: false,
-      };
     } catch (err) {
       console.error("Auth restore failed:", err);
       localStorage.removeItem("user");
       localStorage.removeItem("token");
-      return { user: null, loading: false };
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const [{ user, loading }, setAuth] = useState(getInitialAuth);
-
-  // ✅ Login
   const login = (userData, token) => {
     localStorage.setItem("user", JSON.stringify(userData));
     localStorage.setItem("token", token);
-    setAuth({ user: userData, loading: false });
+    setUser(userData);
   };
 
-  // ✅ Logout
   const logout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    setAuth({ user: null, loading: false });
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        isAuthenticated: !!user,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// ✅ Safe hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

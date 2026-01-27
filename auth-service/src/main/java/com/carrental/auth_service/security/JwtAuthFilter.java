@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,16 +27,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         this.userRepository = userRepository;
     }
 
-    /**
-     * ✅ VERY IMPORTANT
-     * Skip JWT filter for public endpoints
-     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
 
-        return path.startsWith("/api/auth/")
-                || path.startsWith("/api/cars/");
+        return path.startsWith("/auth/")
+                || path.startsWith("/api/auth/");
     }
 
     @Override
@@ -45,43 +42,52 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        // ✅ No token → continue (do NOT fail)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = authHeader.substring(7);
+        String email;
 
-        // ❌ Invalid token → 401 ONLY for protected routes
-        if (!jwtService.validateToken(token)) {
+        try {
+            email = jwtService.extractEmail(token);
+        } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
-        String email = jwtService.extractEmail(token);
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-        userRepository.findByEmail(email).ifPresent(user -> {
+            userRepository.findByEmail(email).ifPresentOrElse(user -> {
 
-            var authorities = List.of(
-                    new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
-            );
+                if (!jwtService.isTokenValid(token, user)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            user.getEmail(),
-                            null,
-                            authorities
-                    );
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                user,
+                                null,
+                                List.of(
+                                        new SimpleGrantedAuthority(
+                                                "ROLE_" + user.getRole().name()
+                                        )
+                                )
+                        );
 
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource().buildDetails(request)
-            );
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-        });
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
+
+            }, () -> response.setStatus(HttpServletResponse.SC_UNAUTHORIZED));
+        }
 
         filterChain.doFilter(request, response);
     }

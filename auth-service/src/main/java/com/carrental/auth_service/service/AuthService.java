@@ -6,10 +6,10 @@ import com.carrental.auth_service.dto.RegisterRequest;
 import com.carrental.auth_service.entity.Role;
 import com.carrental.auth_service.entity.User;
 import com.carrental.auth_service.repository.UserRepository;
+import com.carrental.auth_service.security.JwtService;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.carrental.auth_service.security.JwtService;
 
 import java.util.Optional;
 
@@ -20,14 +20,17 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public AuthService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder,
-                       JwtService jwtService) {
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
 
+    // ================= REGISTER =================
     public String register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -38,13 +41,14 @@ public class AuthService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.ROLE_USER);
+        user.setRole(Role.ROLE_USER); // ✅ MUST WORK (fix in User entity)
 
         userRepository.save(user);
 
         return "User registered successfully";
     }
 
+    // ================= LOGIN =================
     public AuthResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
@@ -55,13 +59,14 @@ public class AuthService {
         }
 
         if (user.getRole() == null) {
-            throw new RuntimeException("User role not assigned. Please contact admin.");
+            throw new RuntimeException("User role not assigned");
         }
 
+        // ✅ IMPORTANT: authorities WITHOUT extra ROLE_
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())
                 .password(user.getPassword())
-                .authorities(user.getRole().name())
+                .authorities(user.getRole().name()) // ROLE_USER / ROLE_ADMIN
                 .build();
 
         String token = jwtService.generateToken(userDetails);
@@ -69,17 +74,18 @@ public class AuthService {
         return new AuthResponse(token);
     }
 
+    // ================= CREATE DEFAULT ADMIN =================
     public void createAdminIfNotExists() {
 
-        Optional<User> adminOpt = userRepository.findByEmail("admin@carrental.com");
+        Optional<User> adminOpt =
+                userRepository.findByEmail("admin@carrental.com");
 
         if (adminOpt.isEmpty()) {
-            User admin = User.builder()
-                    .name("Admin")
-                    .email("admin@carrental.com")
-                    .password(passwordEncoder.encode("admin123"))
-                    .role(Role.ROLE_ADMIN)
-                    .build();
+            User admin = new User();
+            admin.setName("Admin");
+            admin.setEmail("admin@carrental.com");
+            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setRole(Role.ROLE_ADMIN);
 
             userRepository.save(admin);
         }

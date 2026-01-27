@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/admin/cars")
 @PreAuthorize("hasRole('ADMIN')")
@@ -22,33 +24,38 @@ public class AdminController {
     public ResponseEntity<Car> addCar(@RequestBody Car car) {
         car.setAvailable(true);
         Car savedCar = carRepository.save(car);
-        return new ResponseEntity<>(savedCar, HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedCar);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Car> updateCar(
             @PathVariable Long id,
-            @RequestBody Car car) {
+            @RequestBody Car car
+    ) {
+        Optional<Car> optionalCar = carRepository.findById(id);
 
-        Car existing = carRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Car not found"));
+        if (optionalCar.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
 
+        Car existing = optionalCar.get();
         existing.setBrand(car.getBrand());
         existing.setModel(car.getModel());
         existing.setPricePerDay(car.getPricePerDay());
         existing.setAvailable(car.isAvailable());
 
-        return ResponseEntity.ok(carRepository.save(existing));
+        Car updated = carRepository.save(existing);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteCar(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCar(@PathVariable Long id) {
 
         if (!carRepository.existsById(id)) {
-            throw new RuntimeException("Car not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
         carRepository.deleteById(id);
-        return ResponseEntity.ok("Car deleted successfully");
+        return ResponseEntity.noContent().build();
     }
 }

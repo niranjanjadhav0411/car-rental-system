@@ -20,8 +20,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
         SELECT b FROM Booking b
         WHERE b.car.id = :carId
-        AND b.status IN :statuses
-        AND (:startDate <= b.endDate AND :endDate >= b.startDate)
+          AND b.status IN :statuses
+          AND (:startDate <= b.endDate AND :endDate >= b.startDate)
     """)
     List<Booking> findConflictingBookings(
             @Param("carId") Long carId,
@@ -29,6 +29,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("endDate") LocalDate endDate,
             @Param("statuses") List<BookingStatus> statuses
     );
-
-    List<Booking> findByUserId(Long id);
 }

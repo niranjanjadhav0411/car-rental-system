@@ -1,23 +1,30 @@
 package com.carrental.auth_service.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bookings")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Booking {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "car_id")
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "car_id", nullable = false)
     private Car car;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(nullable = false)
@@ -33,20 +40,19 @@ public class Booking {
     private double totalPrice;
 
     @Enumerated(EnumType.STRING)
-//    @Column(nullable = false)
+    @Column(nullable = false)
     private BookingStatus status;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // ✅ Automatically set values before saving
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.status = BookingStatus.PENDING;
+        if (this.status == null) {
+            this.status = BookingStatus.PENDING;
+        }
     }
-
-    // ================= GETTERS =================
 
     public Long getId() {
         return id;
@@ -83,8 +89,6 @@ public class Booking {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
-
-    // ================= SETTERS =================
 
     public void setCar(Car car) {
         this.car = car;

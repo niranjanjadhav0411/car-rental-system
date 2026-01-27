@@ -42,7 +42,7 @@ public class BookingService {
         );
 
         if (!conflicts.isEmpty()) {
-            throw new RuntimeException("Car already booked");
+            throw new RuntimeException("Car already booked for selected dates");
         }
 
         User user = userRepository.findByEmail(userEmail)
@@ -58,25 +58,11 @@ public class BookingService {
         booking.setEndDate(endDate);
         booking.setTotalDays((int) days);
         booking.setTotalPrice(totalPrice);
-        booking.setStatus(BookingStatus.PENDING);
 
         return bookingRepository.save(booking);
     }
 
-    @Transactional
-    public Booking confirmBooking(Long bookingId, String email) {
-        Booking booking = bookingRepository
-                .findByIdAndUser_Email(bookingId, email)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-
-        if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new RuntimeException("Booking cannot be confirmed");
-        }
-
-        booking.setStatus(BookingStatus.CONFIRMED);
-        return bookingRepository.save(booking);
-    }
-
+    // ================= USER BOOKINGS =================
     public List<BookingResponse> getUserBookings(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -94,23 +80,58 @@ public class BookingService {
                 .toList();
     }
 
+    // ================= USER CANCEL =================
+    @Transactional
     public Booking cancelBooking(Long bookingId, String email) {
+
         Booking booking = bookingRepository
                 .findByIdAndUser_Email(bookingId, email)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            throw new RuntimeException("Confirmed booking cannot be cancelled");
+        }
+
         booking.setStatus(BookingStatus.CANCELLED);
-        return bookingRepository.save(booking);
+        return booking;
     }
 
+    // ================= ADMIN =================
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
     }
 
+    @Transactional
     public void updateBookingStatus(Long id, BookingStatus status) {
+
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new RuntimeException("Only pending bookings can be updated");
+        }
+
+        if (status == BookingStatus.CONFIRMED) {
+
+            // prevent overlapping approvals
+            List<Booking> conflicts = bookingRepository.findConflictingBookings(
+                    booking.getCar().getId(),
+                    booking.getStartDate(),
+                    booking.getEndDate(),
+                    List.of(BookingStatus.CONFIRMED)
+            );
+
+            if (!conflicts.isEmpty()) {
+                throw new RuntimeException("Car already confirmed for these dates");
+            }
+
+            booking.getCar().setAvailable(false);
+        }
+
+        if (status == BookingStatus.REJECTED || status == BookingStatus.CANCELLED) {
+            booking.getCar().setAvailable(true);
+        }
+
         booking.setStatus(status);
-        bookingRepository.save(booking);
     }
 }

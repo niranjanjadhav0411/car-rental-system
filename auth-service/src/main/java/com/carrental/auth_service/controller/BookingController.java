@@ -5,6 +5,7 @@ import com.carrental.auth_service.dto.BookingResponse;
 import com.carrental.auth_service.entity.Booking;
 import com.carrental.auth_service.service.BookingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -23,10 +24,35 @@ public class BookingController {
             @RequestBody BookingRequest request,
             Authentication authentication
     ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         String email = authentication.getName();
+
         Booking booking = bookingService.createBooking(request, email);
 
-        BookingResponse response = new BookingResponse(
+        BookingResponse response = mapToResponse(booking);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<List<BookingResponse>> getMyBookings(
+            Authentication authentication
+    ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String email = authentication.getName();
+        List<BookingResponse> bookings = bookingService.getUserBookings(email);
+
+        return ResponseEntity.ok(bookings);
+    }
+
+    private BookingResponse mapToResponse(Booking booking) {
+        return new BookingResponse(
                 booking.getId(),
                 booking.getCar().getBrand() + " " + booking.getCar().getModel(),
                 booking.getStartDate(),
@@ -34,15 +60,5 @@ public class BookingController {
                 booking.getTotalPrice(),
                 booking.getStatus().name()
         );
-
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/my")
-    public ResponseEntity<List<BookingResponse>> getMyBookings(
-            Authentication authentication
-    ) {
-        String email = authentication.getName();
-        return ResponseEntity.ok(bookingService.getUserBookings(email));
     }
 }

@@ -6,13 +6,14 @@ import Register from "./pages/Register";
 import Cars from "./pages/Cars";
 import CarDetails from "./pages/CarDetails";
 import Booking from "./pages/Booking";
-import ProtectedRoute from "./components/ProtectedRoute";
 import MyBookings from "./pages/MyBookings";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-950 text-white">
       <Navbar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,8 +21,10 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
           <Route path="/cars" element={<Cars />} />
           <Route path="/cars/:id" element={<CarDetails />} />
+
           <Route
             path="/booking/:id"
             element={
@@ -30,6 +33,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/my-bookings"
             element={
@@ -45,6 +49,7 @@ export default function App() {
         position="top-right"
         autoClose={2000}
         hideProgressBar={false}
+        newestOnTop
         closeOnClick
         pauseOnHover
         theme="dark"

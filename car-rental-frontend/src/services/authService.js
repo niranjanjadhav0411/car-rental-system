@@ -1,9 +1,22 @@
 import api from "./api";
 
-export const loginUser = (credentials) => api.post("/auth/login", credentials);
+export const loginUser = async (credentials) => {
+  const res = await api.post("/auth/login", credentials);
+
+  const token = res.data?.token;
+
+  if (!token) {
+    throw new Error("Token not received from server");
+  }
+
+  localStorage.setItem("token", token);
+
+  return token;
+};
 
 export const logout = () => {
   localStorage.removeItem("token");
+  localStorage.removeItem("user");
 };
 
 export const getToken = () => {
@@ -11,5 +24,5 @@ export const getToken = () => {
 };
 
 export const isAuthenticated = () => {
-  return !!localStorage.getItem("token");
+  return Boolean(localStorage.getItem("token"));
 };

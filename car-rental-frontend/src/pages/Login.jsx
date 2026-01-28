@@ -27,21 +27,22 @@ export default function Login() {
         password,
       });
 
-      // ✅ Save token
-      localStorage.setItem("token", res.data.token);
+      const { accessToken } = res.data;
 
-      // ✅ Save user in context
-      login(res.data.user);
+      if (!accessToken) {
+        throw new Error("Token missing in response");
+      }
 
-      // ✅ SUCCESS TOAST
+      const user = { email };
+
+      login(user, accessToken);
+
       toast.success("Login successful 🚗");
-
       navigate(from, { replace: true });
     } catch (err) {
-      const msg = "Invalid email or password";
+      console.error("Login error:", err);
+      const msg = err.response?.data?.message || "Invalid email or password";
       setError(msg);
-
-      // ❌ ERROR TOAST
       toast.error(msg);
     } finally {
       setLoading(false);

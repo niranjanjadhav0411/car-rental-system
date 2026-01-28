@@ -23,7 +23,6 @@ export default function MyBookings() {
         console.error("Failed to load bookings", err);
 
         if (err.response?.status === 401 || err.response?.status === 403) {
-          alert("Please login to view your bookings");
           localStorage.removeItem("token");
           navigate("/login");
         }
@@ -35,20 +34,52 @@ export default function MyBookings() {
     fetchBookings();
   }, [navigate]);
 
-  if (loading) return <p>Loading bookings...</p>;
+  if (loading) {
+    return (
+      <p className="text-center py-20 text-gray-400">Loading bookings...</p>
+    );
+  }
 
   return (
-    <div>
-      <h2>My Bookings</h2>
+    <section className="max-w-4xl mx-auto px-4 py-10">
+      <h1 className="text-3xl font-bold text-cyan-400 mb-6">My Bookings</h1>
+
       {bookings.length === 0 ? (
-        <p>No bookings found</p>
+        <p className="text-gray-400">No bookings found</p>
       ) : (
-        bookings.map((b) => (
-          <div key={b.id}>
-            {b.car?.name || "Car"} — {b.status}
-          </div>
-        ))
+        <div className="space-y-4">
+          {bookings.map((b) => (
+            <div
+              key={b.id}
+              className="bg-gray-800 rounded-xl p-5 flex flex-col sm:flex-row sm:justify-between gap-3"
+            >
+              <div>
+                <h3 className="text-lg font-semibold text-cyan-300">
+                  {b.carName}
+                </h3>
+                <p className="text-gray-400 text-sm">
+                  {b.startDate} → {b.endDate}
+                </p>
+              </div>
+
+              <div className="text-right">
+                <p className="font-semibold">₹{b.totalPrice}</p>
+                <span
+                  className={`text-sm px-3 py-1 rounded-full ${
+                    b.status === "CONFIRMED"
+                      ? "bg-green-700 text-green-200"
+                      : b.status === "PENDING"
+                        ? "bg-yellow-700 text-yellow-200"
+                        : "bg-red-700 text-red-200"
+                  }`}
+                >
+                  {b.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
-    </div>
+    </section>
   );
 }

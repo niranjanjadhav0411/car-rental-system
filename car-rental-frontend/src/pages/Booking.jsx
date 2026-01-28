@@ -2,16 +2,25 @@ import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { getCarById } from "../services/carService";
 import { createBooking } from "../services/bookingService";
+import { useAuth } from "../context/AuthContext";
 
 export default function Booking() {
-  const { id } = useParams(); // carId from URL
+  const { id } = useParams(); 
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [car, setCar] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(true);
+  const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/login", { state: { from: `/book/${id}` } });
+    }
+  }, [user, navigate, id]);
 
   useEffect(() => {
     if (!id) return;
@@ -27,33 +36,43 @@ export default function Booking() {
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const diff = end - start;
 
-    if (diff <= 0) return 0;
+    if (end < start) return 0;
 
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const diff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+
+    return Math.floor(diff) + 1;
   };
 
   const days = calculateDays();
   const totalPrice = car ? days * car.pricePerDay : 0;
 
   const handleBooking = async () => {
+    if (!days) return;
+
     try {
+      setBookingLoading(true);
+      setError("");
+
       await createBooking({
-        carId: car.id,
+        carId: Number(car.id),
         startDate,
         endDate,
       });
 
-      alert("Booking confirmed 🎉");
+      alert("Booking request submitted 🚗");
       navigate("/my-bookings");
     } catch (err) {
-      const msg =
-        err.response?.data?.error ||
-        err.response?.data?.message ||
-        "Booking failed";
+      console.error(err);
 
-      alert(msg); // or toast.error(msg)
+      const msg =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || "Booking failed";
+
+      setError(msg);
+    } finally {
+      setBookingLoading(false);
     }
   };
 
@@ -61,13 +80,13 @@ export default function Booking() {
     return <p className="text-center py-20 text-gray-400">Loading...</p>;
   }
 
-  if (error || !car) {
+  if (error && !car) {
     return <p className="text-center py-20 text-red-400">{error}</p>;
   }
 
   return (
     <section className="max-w-4xl mx-auto px-4 py-10">
-      {/* Header */}
+
       <div className="mb-8">
         <Link to={`/cars/${car.id}`} className="text-cyan-400 hover:underline">
           ← Back to Car
@@ -82,20 +101,17 @@ export default function Booking() {
         </p>
       </div>
 
-      {/* Card */}
       <div className="bg-gray-900 rounded-2xl shadow-xl p-6 sm:p-8 space-y-6">
-        {/* Date Inputs */}
+        {error && (
+          <div className="text-red-400 bg-red-900/30 p-3 rounded">{error}</div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label
-              htmlFor="startDate"
-              className="block text-sm text-gray-400 mb-1"
-            >
+            <label className="block text-sm text-gray-400 mb-1">
               Pickup Date
             </label>
             <input
-              id="startDate"
-              name="startDate"
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -104,15 +120,10 @@ export default function Booking() {
           </div>
 
           <div>
-            <label
-              htmlFor="endDate"
-              className="block text-sm text-gray-400 mb-1"
-            >
+            <label className="block text-sm text-gray-400 mb-1">
               Drop Date
             </label>
             <input
-              id="endDate"
-              name="endDate"
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
@@ -121,7 +132,6 @@ export default function Booking() {
           </div>
         </div>
 
-        {/* Summary */}
         <div className="bg-gray-800 rounded-xl p-5 space-y-3">
           <div className="flex justify-between">
             <span className="text-gray-400">Price per day</span>
@@ -141,13 +151,12 @@ export default function Booking() {
           </div>
         </div>
 
-        {/* CTA */}
         <button
-          disabled={!days}
+          disabled={!days || bookingLoading}
           onClick={handleBooking}
           className="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 disabled:cursor-not-allowed font-semibold text-lg transition"
         >
-          Confirm Booking
+          {bookingLoading ? "Booking..." : "Confirm Booking"}
         </button>
       </div>
     </section>

@@ -10,8 +10,8 @@ export default function Cars() {
   useEffect(() => {
     const fetchCars = async () => {
       try {
-        const res = await getAllCars();
-        setCars(res.data || []);
+        const data = await getAllCars();
+        setCars(data || []);
       } catch (err) {
         console.error("Failed to load cars", err);
         setError("Unable to load cars");

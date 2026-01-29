@@ -31,8 +31,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
 
-        return path.startsWith("/auth/")
-                || path.startsWith("/api/auth/");
+        return path.startsWith("/api/auth/")
+                || (request.getMethod().equals("GET") && path.startsWith("/cars"));
     }
 
     @Override
@@ -61,32 +61,30 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            userRepository.findByEmail(email).ifPresentOrElse(user -> {
+            var userOpt = userRepository.findByEmail(email);
 
-                if (!jwtService.isTokenValid(token, user)) {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    return;
-                }
+            if (userOpt.isEmpty() || !jwtService.isTokenValid(token, userOpt.get())) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                user,
-                                null,
-                                List.of(
-                                        new SimpleGrantedAuthority(
-                                                "ROLE_" + user.getRole().name()
-                                        )
-                                )
-                        );
+            var user = userOpt.get();
 
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            user,
+                            null,
+                            List.of(new SimpleGrantedAuthority(
+                                    "ROLE_" + user.getRole().name()
+                            ))
+                    );
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+            );
 
-            }, () -> response.setStatus(HttpServletResponse.SC_UNAUTHORIZED));
+            SecurityContextHolder.getContext()
+                    .setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);

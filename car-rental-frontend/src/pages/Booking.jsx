@@ -5,7 +5,7 @@ import { createBooking } from "../services/bookingService";
 import { useAuth } from "../context/AuthContext";
 
 export default function Booking() {
-  const { id } = useParams(); 
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -86,7 +86,6 @@ export default function Booking() {
 
   return (
     <section className="max-w-4xl mx-auto px-4 py-10">
-
       <div className="mb-8">
         <Link to={`/cars/${car.id}`} className="text-cyan-400 hover:underline">
           ← Back to Car

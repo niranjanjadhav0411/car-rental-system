@@ -17,7 +17,7 @@ export default function CarDetails() {
     }
 
     getCarById(id)
-      .then((res) => setCar(res.data))
+      .then((data) => setCar(data))
       .catch(() => setError("Car not found"))
       .finally(() => setLoading(false));
   }, [id]);

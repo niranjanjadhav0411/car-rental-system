@@ -31,7 +31,7 @@ public class AuthService {
     }
 
     // ================= REGISTER =================
-    public String register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered");
@@ -41,17 +41,17 @@ public class AuthService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.ROLE_USER); // ✅ MUST WORK (fix in User entity)
+        user.setRole(Role.ROLE_USER);
 
         userRepository.save(user);
 
-        return "User registered successfully";
+        return new AuthResponse("User registered successfully");
     }
 
     // ================= LOGIN =================
     public AuthResponse login(LoginRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(request.getEmail().toLowerCase())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -62,7 +62,6 @@ public class AuthService {
             throw new RuntimeException("User role not assigned");
         }
 
-        // ✅ IMPORTANT: authorities WITHOUT extra ROLE_
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())
                 .password(user.getPassword())

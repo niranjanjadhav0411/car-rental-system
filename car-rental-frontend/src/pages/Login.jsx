@@ -22,26 +22,27 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await api.post("/auth/login", {
+      const res = await api.post("/api/auth/login", {
         email,
         password,
       });
 
-      const { accessToken } = res.data;
+      const accessToken = res.data.accessToken;
 
       if (!accessToken) {
-        throw new Error("Token missing in response");
+        throw new Error("JWT not returned from server");
       }
 
-      const user = { email };
-
-      login(user, accessToken);
+      login({ email }, accessToken);
 
       toast.success("Login successful 🚗");
       navigate(from, { replace: true });
     } catch (err) {
-      console.error("Login error:", err);
-      const msg = err.response?.data?.message || "Invalid email or password";
+      console.error("Failed to load car:", err);
+      setError("Car not found");
+
+      const msg = err.response?.data?.message || err.message || "Login failed";
+
       setError(msg);
       toast.error(msg);
     } finally {
@@ -68,7 +69,7 @@ export default function Login() {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 focus:border-cyan-500 focus:outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700"
             required
           />
 
@@ -77,14 +78,14 @@ export default function Login() {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700 focus:border-cyan-500 focus:outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-700"
             required
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-600 disabled:cursor-not-allowed font-semibold transition"
+            className="w-full py-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-600 font-semibold"
           >
             {loading ? "Logging in..." : "Login"}
           </button>

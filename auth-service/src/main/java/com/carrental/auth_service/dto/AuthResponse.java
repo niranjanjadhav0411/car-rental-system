@@ -1,13 +1,18 @@
 package com.carrental.auth_service.dto;
 
 public class AuthResponse {
-    private String token;
 
-    public AuthResponse(String token) {
-        this.token = token;
+    private String accessToken;
+
+    public AuthResponse(String accessToken) {
+        this.accessToken = accessToken;
     }
 
-    public String getToken() {
-        return token;
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 }

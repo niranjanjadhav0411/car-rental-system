@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -8,10 +8,31 @@ const BookCar = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
+  const [car, setCar] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 🔹 Fetch car details
+  useEffect(() => {
+    if (!carId) {
+      setError("Invalid car selected");
+      return;
+    }
+
+    const fetchCar = async () => {
+      try {
+        const res = await api.get(`/api/cars/${carId}`);
+        setCar(res.data);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load car details");
+      }
+    };
+
+    fetchCar();
+  }, [carId]);
 
   const handleBooking = async () => {
     if (!isAuthenticated) {
@@ -34,7 +55,7 @@ const BookCar = () => {
         endDate,
       });
 
-      alert("Booking request submitted 🚗");
+      alert("Booking confirmed 🚗");
       navigate("/my-bookings");
     } catch (err) {
       console.error(err);
@@ -58,6 +79,19 @@ const BookCar = () => {
         <p className="mb-3 text-red-400 bg-red-900/30 p-2 rounded">{error}</p>
       )}
 
+      {/* 🔹 Car Info */}
+      {car ? (
+        <div className="mb-4 bg-gray-900 p-3 rounded">
+          <p className="text-lg font-semibold text-white">
+            {car.brand} {car.model}
+          </p>
+          <p className="text-gray-400">Price per day: ₹{car.pricePerDay}</p>
+          <p className="text-gray-400">Type: {car.type}</p>
+        </div>
+      ) : (
+        <p className="text-gray-400 mb-4">Loading car details...</p>
+      )}
+
       <input
         type="date"
         className="border p-2 w-full mb-3 rounded bg-gray-900 text-white"
@@ -74,7 +108,7 @@ const BookCar = () => {
 
       <button
         onClick={handleBooking}
-        disabled={loading}
+        disabled={loading || !car}
         className="bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-600 text-white px-4 py-2 w-full rounded font-semibold"
       >
         {loading ? "Booking..." : "Book Now"}

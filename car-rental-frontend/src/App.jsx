@@ -26,7 +26,7 @@ export default function App() {
           <Route path="/cars/:id" element={<CarDetails />} />
 
           <Route
-            path="/booking/:id"
+            path="/booking/:carId"
             element={
               <ProtectedRoute>
                 <Booking />

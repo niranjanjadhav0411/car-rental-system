@@ -5,7 +5,7 @@ import { createBooking } from "../services/bookingService";
 import { useAuth } from "../context/AuthContext";
 
 export default function Booking() {
-  const { id } = useParams();
+  const { carId } = useParams(); // ✅ FIXED
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -16,20 +16,26 @@ export default function Booking() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // 🔐 Redirect if not logged in
   useEffect(() => {
-    if (!user) {
-      navigate("/login", { state: { from: `/book/${id}` } });
+    if (user === null) {
+      navigate("/login", { state: { from: `/book/${carId}` } });
     }
-  }, [user, navigate, id]);
+  }, [user, navigate, carId]);
 
+  // 🚗 Fetch car details
   useEffect(() => {
-    if (!id) return;
+    if (!carId) {
+      setError("Invalid car selected");
+      setLoading(false);
+      return;
+    }
 
-    getCarById(id)
+    getCarById(carId)
       .then((res) => setCar(res.data))
       .catch(() => setError("Car not found"))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [carId]);
 
   const calculateDays = () => {
     if (!startDate || !endDate) return 0;
@@ -48,7 +54,7 @@ export default function Booking() {
   const totalPrice = car ? days * car.pricePerDay : 0;
 
   const handleBooking = async () => {
-    if (!days) return;
+    if (!days || !car) return;
 
     try {
       setBookingLoading(true);
@@ -60,7 +66,7 @@ export default function Booking() {
         endDate,
       });
 
-      alert("Booking request submitted 🚗");
+      alert("Booking confirmed 🚗");
       navigate("/my-bookings");
     } catch (err) {
       console.error(err);
@@ -77,7 +83,9 @@ export default function Booking() {
   };
 
   if (loading) {
-    return <p className="text-center py-20 text-gray-400">Loading...</p>;
+    return (
+      <p className="text-center py-20 text-gray-400">Loading car details...</p>
+    );
   }
 
   if (error && !car) {

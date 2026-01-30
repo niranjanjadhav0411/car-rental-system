@@ -17,17 +17,23 @@ export default function CarDetails() {
     }
 
     getCarById(id)
-      .then((data) => setCar(data))
+      .then((res) => setCar(res.data)) // ✅ FIXED
       .catch(() => setError("Car not found"))
       .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) {
-    return <p className="text-center py-20 text-gray-400">Loading...</p>;
+    return (
+      <p className="text-center py-20 text-gray-400">Loading car details...</p>
+    );
   }
 
   if (error || !car) {
-    return <p className="text-center py-20 text-red-400">{error}</p>;
+    return (
+      <p className="text-center py-20 text-red-400">
+        {error || "Car not available"}
+      </p>
+    );
   }
 
   return (
@@ -63,8 +69,9 @@ export default function CarDetails() {
             </span>
           </div>
 
+          {/* ✅ FIXED BOOKING LINK */}
           <Link
-            to={`/booking/${car.id}`}
+            to={`/book/${car.id}`}
             className="block text-center bg-cyan-600 hover:bg-cyan-500 py-3 rounded-xl text-lg font-semibold transition"
           >
             Book This Car

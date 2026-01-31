@@ -1,64 +1,58 @@
 package com.carrental.auth_service.controller;
 
 import com.carrental.auth_service.dto.BookingRequest;
-import com.carrental.auth_service.dto.BookingResponse;
-import com.carrental.auth_service.entity.Booking;
-import com.carrental.auth_service.service.BookingService;
+import com.carrental.auth_service.entity.*;
+import com.carrental.auth_service.repository.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173")
 public class BookingController {
 
-    private final BookingService bookingService;
+    private final BookingRepository bookingRepository;
+    private final CarRepository carRepository;
+    private final UserRepository userRepository;
 
     @PostMapping
-    public ResponseEntity<BookingResponse> createBooking(
+    public Booking createBooking(
             @RequestBody BookingRequest request,
             Authentication authentication
     ) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow();
 
-        String email = authentication.getName();
+        Car car = carRepository.findById(request.getCarId())
+                .orElseThrow();
 
-        Booking booking = bookingService.createBooking(request, email);
+        long days = ChronoUnit.DAYS.between(
+                request.getStartDate(),
+                request.getEndDate()
+        );
 
-        BookingResponse response = mapToResponse(booking);
+        Booking booking = Booking.builder()
+                .car(car)
+                .user(user)
+                .startDate(request.getStartDate())
+                .endDate(request.getEndDate())
+                .totalDays((int) days)
+                .totalPrice(days * car.getPricePerDay())
+                .status(BookingStatus.CONFIRMED)
+                .build();
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return bookingRepository.save(booking);
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<BookingResponse>> getMyBookings(
-            Authentication authentication
-    ) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        String email = authentication.getName();
-        List<BookingResponse> bookings = bookingService.getUserBookings(email);
-
-        return ResponseEntity.ok(bookings);
-    }
-
-    private BookingResponse mapToResponse(Booking booking) {
-        return new BookingResponse(
-                booking.getId(),
-                booking.getCar().getBrand() + " " + booking.getCar().getModel(),
-                booking.getStartDate(),
-                booking.getEndDate(),
-                booking.getTotalPrice(),
-                booking.getStatus().name()
-        );
+    public List<Booking> myBookings(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow();
+        return bookingRepository.findByUser(user);
     }
 }

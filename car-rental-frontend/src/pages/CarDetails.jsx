@@ -9,11 +9,13 @@ export default function CarDetails() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!id) return; // 🛑 prevent undefined API call
+
     const fetchCar = async () => {
       try {
         const data = await getCarById(id);
         setCar(data);
-      } catch {
+      } catch (err) {
         setError("Car not found");
       } finally {
         setLoading(false);
@@ -28,7 +30,11 @@ export default function CarDetails() {
   }
 
   if (error || !car) {
-    return <p className="text-center py-20 text-red-400">{error}</p>;
+    return (
+      <p className="text-center py-20 text-red-400">
+        {error || "Car not found"}
+      </p>
+    );
   }
 
   return (
@@ -43,6 +49,7 @@ export default function CarDetails() {
             car.image ||
             "https://images.unsplash.com/photo-1555215695-3004980ad54e"
           }
+          alt={`${car.brand} ${car.model}`}
           className="rounded-xl"
         />
 
@@ -53,9 +60,9 @@ export default function CarDetails() {
 
           <p className="mt-4 text-xl">₹{car.pricePerDay} / day</p>
 
-          {/* ✅ CORRECT ROUTE */}
+          {/* ✅ FIX: use correct ID */}
           <Link
-            to={`/booking/${car.id}`}
+            to={`/booking/${car._id || car.id}`}
             className="mt-6 inline-block bg-cyan-600 px-6 py-3 rounded-xl"
           >
             Book This Car

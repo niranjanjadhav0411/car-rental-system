@@ -1,27 +1,15 @@
-import axios from "axios";
-
-const API_URL = "http://localhost:8081/api/cars";
-
-const getAuthHeader = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  if (!user || !user.token) {
-    return {};
-  }
-
-  return {
-    headers: {
-      Authorization: `Bearer ${user.token}`,
-    },
-  };
-};
+import api from "./api";
 
 export const getAllCars = async () => {
-  const response = await axios.get(API_URL, getAuthHeader());
+  const response = await api.get("/cars");
   return response.data;
 };
 
 export const getCarById = async (id) => {
-  const response = await axios.get(`${API_URL}/${id}`, getAuthHeader());
+  if (!id) {
+    throw new Error("Car ID is required");
+  }
+
+  const response = await api.get(`/cars/${id}`);
   return response.data;
 };

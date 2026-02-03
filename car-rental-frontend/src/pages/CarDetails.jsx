@@ -9,7 +9,7 @@ export default function CarDetails() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!id) return; // 🛑 prevent undefined API call
+    if (!id) return; 
 
     const fetchCar = async () => {
       try {

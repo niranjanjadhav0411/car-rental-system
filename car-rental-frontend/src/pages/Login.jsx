@@ -22,7 +22,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await api.post("/api/auth/login", {
+      const res = await api.post("/auth/login", {
         email,
         password,
       });
@@ -38,8 +38,7 @@ export default function Login() {
       toast.success("Login successful 🚗");
       navigate(from, { replace: true });
     } catch (err) {
-      console.error("Failed to load car:", err);
-      setError("Car not found");
+      console.error("Login failed:", err);
 
       const msg = err.response?.data?.message || err.message || "Login failed";
 

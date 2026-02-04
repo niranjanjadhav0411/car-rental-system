@@ -8,30 +8,31 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem("user");
-      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
 
-      if (storedUser && token) {
-        setUser(JSON.parse(storedUser));
+      if (userStr && userStr !== "undefined") {
+        setUser(JSON.parse(userStr));
       }
     } catch (err) {
       console.error("Auth restore failed:", err);
       localStorage.removeItem("user");
-      localStorage.removeItem("token");
     } finally {
       setLoading(false);
     }
   }, []);
 
   const login = (userData, token) => {
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", token);
-    setUser(userData);
+    const authUser = {
+      ...userData,
+      token, // ✅ store token INSIDE user
+    };
+
+    localStorage.setItem("user", JSON.stringify(authUser));
+    setUser(authUser);
   };
 
   const logout = () => {
     localStorage.removeItem("user");
-    localStorage.removeItem("token");
     setUser(null);
   };
 

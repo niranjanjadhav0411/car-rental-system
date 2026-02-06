@@ -46,37 +46,41 @@ export default function Cars() {
       </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cars.map((car) => (
-          <div
-            key={car._id}
-            className="bg-gray-900 rounded-2xl overflow-hidden shadow-lg hover:scale-[1.02] transition"
-          >
-            <img
-              loading="lazy"
-              src={
-                car.image ||
-                "https://images.unsplash.com/photo-1555215695-3004980ad54e"
-              }
-              alt={`${car.brand} ${car.model}`}
-              className="h-48 w-full object-cover"
-            />
+        {cars.map((car) => {
+          const carId = car.id ?? car._id;
 
-            <div className="p-5 space-y-2">
-              <h3 className="text-lg font-semibold">
-                {car.brand} {car.model}
-              </h3>
+          return (
+            <div
+              key={carId}
+              className="bg-gray-900 rounded-2xl overflow-hidden shadow-lg hover:scale-[1.02] transition"
+            >
+              <img
+                loading="lazy"
+                src={
+                  car.image ||
+                  "https://images.unsplash.com/photo-1555215695-3004980ad54e"
+                }
+                alt={`${car.brand} ${car.model}`}
+                className="h-48 w-full object-cover"
+              />
 
-              <p className="text-gray-400">₹{car.pricePerDay} / day</p>
+              <div className="p-5 space-y-2">
+                <h3 className="text-lg font-semibold">
+                  {car.brand} {car.model}
+                </h3>
 
-              <Link
-                to={`/cars/${car._id}`}
-                className="block mt-3 text-center bg-cyan-600 hover:bg-cyan-500 py-2 rounded-xl font-semibold transition"
-              >
-                View Details
-              </Link>
+                <p className="text-gray-400">₹{car.pricePerDay} / day</p>
+
+                <Link
+                  to={`/cars/${carId}`}
+                  className="block mt-3 text-center bg-cyan-600 hover:bg-cyan-500 py-2 rounded-xl font-semibold transition"
+                >
+                  View Details
+                </Link>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

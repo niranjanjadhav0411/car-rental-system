@@ -30,7 +30,15 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/cars/:id" element={<CarDetails />} />
+
+          <Route
+            path="/cars/:id"
+            element={
+              <ProtectedRoute>
+                <CarDetails />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/booking/:carId"
@@ -55,7 +63,6 @@ export default function App() {
       <ToastContainer
         position="top-right"
         autoClose={2000}
-        hideProgressBar={false}
         newestOnTop
         closeOnClick
         pauseOnHover

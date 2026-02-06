@@ -11,5 +11,6 @@ export const getCarById = async (id) => {
   }
 
   const response = await api.get(`/cars/${id}`);
+  console.log(response.data);
   return response.data;
 };

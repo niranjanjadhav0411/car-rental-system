@@ -4,17 +4,22 @@ import { getCarById } from "../services/carService";
 
 export default function CarDetails() {
   const { id } = useParams();
+
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setError("Invalid car ID");
+      setLoading(false);
+      return;
+    }
 
     const fetchCar = async () => {
       try {
-        const data = await getCarById(id);
-        setCar(data);
+        const carData = await getCarById(id);
+        setCar(carData);
       } catch (err) {
         setError("Car not found");
       } finally {
@@ -29,12 +34,8 @@ export default function CarDetails() {
     return <p className="text-center py-20">Loading car details...</p>;
   }
 
-  if (error || !car) {
-    return (
-      <p className="text-center py-20 text-red-400">
-        {error || "Car not found"}
-      </p>
-    );
+  if (error) {
+    return <p className="text-center py-20 text-red-400">{error}</p>;
   }
 
   return (
@@ -60,9 +61,8 @@ export default function CarDetails() {
 
           <p className="mt-4 text-xl">₹{car.pricePerDay} / day</p>
 
-          {/* ✅ FIX: use correct ID */}
           <Link
-            to={`/booking/${car._id || car.id}`}
+            to={`/booking/${car.id ?? car._id}`}
             className="mt-6 inline-block bg-cyan-600 px-6 py-3 rounded-xl"
           >
             Book This Car

@@ -32,7 +32,7 @@ export default function Booking() {
     }
 
     getCarById(carId)
-      .then((res) => setCar(res.data))
+      .then((res) => setCar(res))
       .catch(() => setError("Car not found"))
       .finally(() => setLoading(false));
   }, [carId]);
@@ -62,6 +62,7 @@ export default function Booking() {
 
       await createBooking({
         carId: Number(car.id),
+        name: car.brand,
         startDate,
         endDate,
       });
@@ -100,7 +101,7 @@ export default function Booking() {
         </Link>
 
         <h1 className="mt-4 text-3xl sm:text-4xl font-bold text-cyan-400">
-          Book {car.brand} {car.model}
+          {car ? `Book ${car.brand} ${car.model}` : "Loading car details..."}
         </h1>
 
         <p className="text-gray-400 mt-2">

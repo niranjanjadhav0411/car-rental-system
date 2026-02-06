@@ -35,9 +35,9 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/cars/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/cars/**").permitAll()
 
-                        .requestMatchers("/api/bookings/**").authenticated()
+                        .requestMatchers("/api/bookings/**").permitAll()
 
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 

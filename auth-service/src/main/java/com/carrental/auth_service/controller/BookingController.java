@@ -25,8 +25,10 @@ public class BookingController {
             @RequestBody BookingRequest request,
             Authentication authentication
     ) {
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow();
+//        User user = userRepository.findBy(request.getName())
+//                .orElseThrow();
+
+        User user = userRepository.findByEmail("nj@gmail.com").orElseThrow();
 
         Car car = carRepository.findById(request.getCarId())
                 .orElseThrow();

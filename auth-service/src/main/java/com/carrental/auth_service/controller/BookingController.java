@@ -25,8 +25,6 @@ public class BookingController {
             @RequestBody BookingRequest request,
             Authentication authentication
     ) {
-//        User user = userRepository.findBy(request.getName())
-//                .orElseThrow();
 
         User user = userRepository.findByEmail("nj@gmail.com").orElseThrow();
 

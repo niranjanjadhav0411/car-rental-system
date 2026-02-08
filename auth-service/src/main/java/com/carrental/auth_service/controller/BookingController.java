@@ -4,6 +4,8 @@ import com.carrental.auth_service.dto.BookingRequest;
 import com.carrental.auth_service.entity.*;
 import com.carrental.auth_service.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,20 +23,27 @@ public class BookingController {
     private final UserRepository userRepository;
 
     @PostMapping
-    public Booking createBooking(
+    public ResponseEntity<Booking> createBooking(
             @RequestBody BookingRequest request,
             Authentication authentication
     ) {
 
-        User user = userRepository.findByEmail("nj@gmail.com").orElseThrow();
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Car car = carRepository.findById(request.getCarId())
-                .orElseThrow();
+                .orElseThrow(() -> new RuntimeException("Car not found"));
+
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            throw new RuntimeException("End date cannot be before start date");
+        }
 
         long days = ChronoUnit.DAYS.between(
                 request.getStartDate(),
                 request.getEndDate()
-        );
+        ) + 1;
+
+        double totalPrice = days * car.getPricePerDay();
 
         Booking booking = Booking.builder()
                 .car(car)
@@ -42,17 +51,25 @@ public class BookingController {
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .totalDays((int) days)
-                .totalPrice(days * car.getPricePerDay())
+                .totalPrice(totalPrice)
                 .status(BookingStatus.CONFIRMED)
                 .build();
 
-        return bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(booking);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(savedBooking);
     }
 
     @GetMapping("/my")
-    public List<Booking> myBookings(Authentication authentication) {
+    public ResponseEntity<List<Booking>> myBookings(Authentication authentication) {
+
         User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow();
-        return bookingRepository.findByUser(user);
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return ResponseEntity.ok(
+                bookingRepository.findByUser(user)
+        );
     }
 }

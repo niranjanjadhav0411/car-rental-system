@@ -23,34 +23,59 @@ public class BookingController {
     private final UserRepository userRepository;
 
     @PostMapping
-    public ResponseEntity<Booking> createBooking(
+    public ResponseEntity<?> createBooking(
             @RequestBody BookingRequest request,
             Authentication authentication
     ) {
 
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Car car = carRepository.findById(request.getCarId())
-                .orElseThrow(() -> new RuntimeException("Car not found"));
-
-        if (request.getEndDate().isBefore(request.getStartDate())) {
-            throw new RuntimeException("End date cannot be before start date");
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized");
         }
 
-        long days = ChronoUnit.DAYS.between(
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
+
+        Car car = carRepository.findById(request.getCarId())
+                .orElseThrow(() ->
+                        new RuntimeException("Car not found")
+                );
+
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("End date cannot be before start date");
+        }
+
+        boolean isCarBooked = bookingRepository
+                .existsByCarAndDateOverlap(
+                        car,
+                        request.getStartDate(),
+                        request.getEndDate()
+                );
+
+        if (isCarBooked) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body("Car is already booked for the selected dates");
+        }
+
+        long totalDays = ChronoUnit.DAYS.between(
                 request.getStartDate(),
                 request.getEndDate()
         ) + 1;
 
-        double totalPrice = days * car.getPricePerDay();
+        double totalPrice = totalDays * car.getPricePerDay();
 
         Booking booking = Booking.builder()
                 .car(car)
                 .user(user)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
-                .totalDays((int) days)
+                .totalDays((int) totalDays)
                 .totalPrice(totalPrice)
                 .status(BookingStatus.CONFIRMED)
                 .build();
@@ -63,13 +88,21 @@ public class BookingController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<Booking>> myBookings(Authentication authentication) {
+    public ResponseEntity<?> myBookings(Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Unauthorized");
+        }
 
         User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
 
-        return ResponseEntity.ok(
-                bookingRepository.findByUser(user)
-        );
+        List<Booking> bookings = bookingRepository.findByUser(user);
+
+        return ResponseEntity.ok(bookings);
     }
 }

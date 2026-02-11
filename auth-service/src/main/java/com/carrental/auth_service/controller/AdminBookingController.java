@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/bookings")
@@ -21,34 +22,47 @@ public class AdminBookingController {
 
     @GetMapping
     public ResponseEntity<List<BookingResponse>> getAllBookings() {
-        return ResponseEntity.ok(
-                bookingService.getAllBookings()
-                        .stream()
-                        .map(this::mapToResponse)
-                        .toList()
-        );
+
+        List<BookingResponse> responses = bookingService.getAllBookings()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responses);
     }
 
+    /**
+     * Approve booking
+     */
     @PutMapping("/{id}/approve")
-    public ResponseEntity<String> approve(@PathVariable Long id) {
+    public ResponseEntity<String> approveBooking(@PathVariable Long id) {
+
         bookingService.updateBookingStatus(id, BookingStatus.CONFIRMED);
+
         return ResponseEntity.ok("Booking approved successfully");
     }
 
     @PutMapping("/{id}/reject")
-    public ResponseEntity<String> reject(@PathVariable Long id) {
+    public ResponseEntity<String> rejectBooking(@PathVariable Long id) {
+
         bookingService.updateBookingStatus(id, BookingStatus.REJECTED);
+
         return ResponseEntity.ok("Booking rejected successfully");
     }
 
-    private BookingResponse mapToResponse(Booking b) {
+    private BookingResponse mapToResponse(Booking booking) {
+
+        String carName = booking.getCar() != null
+                ? booking.getCar().getBrand() + " " + booking.getCar().getModel()
+                : "N/A";
+
         return new BookingResponse(
-                b.getId(),
-                b.getCar().getBrand() + " " + b.getCar().getModel(),
-                b.getStartDate(),
-                b.getEndDate(),
-                b.getTotalPrice(),
-                b.getStatus().name()
+                booking.getId(),
+                carName,
+                booking.getStartDate(),
+                booking.getEndDate(),
+                booking.getTotalPrice(),
+                booking.getStatus().name()
         );
     }
 }

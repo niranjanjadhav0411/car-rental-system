@@ -33,19 +33,28 @@ public class AuthService {
     // ================= REGISTER =================
     public AuthResponse register(RegisterRequest request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(request.getEmail().toLowerCase())) {
             throw new RuntimeException("Email already registered");
         }
 
         User user = new User();
         user.setName(request.getName());
-        user.setEmail(request.getEmail());
+        user.setEmail(request.getEmail().toLowerCase());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.ROLE_USER);
 
         userRepository.save(user);
 
-        return new AuthResponse("User registered successfully");
+        // Auto-generate JWT for new user
+        UserDetails userDetails = org.springframework.security.core.userdetails.User
+                .withUsername(user.getEmail())
+                .password(user.getPassword())
+                .authorities(user.getRole().name())
+                .build();
+
+        String token = jwtService.generateToken(userDetails);
+
+        return new AuthResponse(token, user.getEmail(), user.getRole().name());
     }
 
     // ================= LOGIN =================
@@ -65,12 +74,12 @@ public class AuthService {
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail())
                 .password(user.getPassword())
-                .authorities(user.getRole().name()) // ROLE_USER / ROLE_ADMIN
+                .authorities(user.getRole().name())
                 .build();
 
         String token = jwtService.generateToken(userDetails);
 
-        return new AuthResponse(token);
+        return new AuthResponse(token, user.getEmail(), user.getRole().name());
     }
 
     // ================= CREATE DEFAULT ADMIN =================

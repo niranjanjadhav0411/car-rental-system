@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import api from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -7,33 +8,53 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const userStr = localStorage.getItem("user");
+    const restoreAuth = () => {
+      try {
+        const userStr = localStorage.getItem("user");
 
-      if (userStr && userStr !== "undefined") {
-        setUser(JSON.parse(userStr));
+        if (!userStr || userStr === "undefined") {
+          setUser(null);
+          return;
+        }
+
+        const parsedUser = JSON.parse(userStr);
+
+        if (parsedUser?.token) {
+          setUser(parsedUser);
+          api.defaults.headers.common["Authorization"] =
+            `Bearer ${parsedUser.token}`;
+        } else {
+          localStorage.removeItem("user");
+          setUser(null);
+        }
+      } catch (err) {
+        console.error("Auth restore failed:", err);
+        localStorage.removeItem("user");
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Auth restore failed:", err);
-      localStorage.removeItem("user");
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    restoreAuth();
   }, []);
 
   const login = (userData, token) => {
     const authUser = {
       ...userData,
-      token, // ✅ store token INSIDE user
+      token,
     };
 
     localStorage.setItem("user", JSON.stringify(authUser));
     setUser(authUser);
+
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   };
 
   const logout = () => {
     localStorage.removeItem("user");
     setUser(null);
+    delete api.defaults.headers.common["Authorization"];
   };
 
   return (
@@ -46,7 +67,7 @@ export const AuthProvider = ({ children }) => {
         logout,
       }}
     >
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

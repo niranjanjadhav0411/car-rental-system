@@ -1,5 +1,6 @@
 package com.carrental.auth_service.security;
 
+import com.carrental.auth_service.entity.User;
 import com.carrental.auth_service.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -32,7 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
         return path.startsWith("/api/auth/")
-                || (request.getMethod().equals("GET") && path.startsWith("/cars"));
+                || (request.getMethod().equals("GET") && path.startsWith("/api/cars"));
     }
 
     @Override
@@ -55,36 +56,31 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             email = jwtService.extractEmail(token);
         } catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
             return;
         }
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            var userOpt = userRepository.findByEmail(email);
+            User user = userRepository.findByEmail(email).orElse(null);
 
-            if (userOpt.isEmpty() || !jwtService.isTokenValid(token, userOpt.get())) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            if (user == null || !jwtService.isTokenValid(token, user)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token invalid or user not found");
                 return;
             }
 
-            var user = userOpt.get();
-
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            user,
+                            user.getEmail(),
                             null,
-                            List.of(new SimpleGrantedAuthority(
-                                    "ROLE_" + user.getRole().name()
-                            ))
+                            List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
                     );
 
             authentication.setDetails(
                     new WebAuthenticationDetailsSource().buildDetails(request)
             );
 
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);

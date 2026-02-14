@@ -29,12 +29,12 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role = Role.ROLE_USER;
+    private Role role = Role.USER;
 
     @PrePersist
     public void ensureRole() {
         if (role == null) {
-            role = Role.ROLE_USER;
+            role = Role.USER;
         }
     }
 

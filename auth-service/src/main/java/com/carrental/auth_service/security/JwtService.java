@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 @Service
 public class JwtService {
 
-    // Base64 encoded (VERY IMPORTANT)
     private static final String SECRET_KEY =
             "bXlzZWNyZXRrZXlteXNlY3JldGtleW15c2VjcmV0a2V5MTIz";
 
@@ -27,6 +26,7 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    // ================= GENERATE TOKEN =================
     public String generateToken(UserDetails userDetails) {
 
         List<String> roles = userDetails.getAuthorities()
@@ -39,19 +39,21 @@ public class JwtService {
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
                 .setExpiration(
-                        new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)
+                        new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24) // 1 day
                 )
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    // ================= EXTRACT EMAIL =================
     public String extractEmail(String token) {
         return extractClaims(token).getSubject();
     }
 
-    public boolean isTokenValid(String token, User userDetails) {
-        final String email = extractEmail(token);
-        return email.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    // ================= VALIDATE TOKEN =================
+    public boolean isTokenValid(String token, User user) {
+        String email = extractEmail(token);
+        return email.equals(user.getEmail()) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {

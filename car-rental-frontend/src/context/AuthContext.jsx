@@ -7,30 +7,25 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Restore user session
   useEffect(() => {
     const restoreAuth = () => {
       try {
-        const userStr = localStorage.getItem("user");
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) return;
 
-        if (!userStr || userStr === "undefined") {
-          setUser(null);
-          return;
-        }
+        const parsedUser = JSON.parse(storedUser);
 
-        const parsedUser = JSON.parse(userStr);
-
-        if (parsedUser?.token) {
+        if (parsedUser?.accessToken) {
           setUser(parsedUser);
           api.defaults.headers.common["Authorization"] =
-            `Bearer ${parsedUser.token}`;
+            `Bearer ${parsedUser.accessToken}`;
         } else {
           localStorage.removeItem("user");
-          setUser(null);
         }
       } catch (err) {
-        console.error("Auth restore failed:", err);
+        console.error("Failed to restore auth:", err);
         localStorage.removeItem("user");
-        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -39,18 +34,23 @@ export const AuthProvider = ({ children }) => {
     restoreAuth();
   }, []);
 
-  const login = (userData, token) => {
+  // Login
+  const login = (authResponse) => {
+    // authResponse.role now comes from backend: "ADMIN" or "USER"
     const authUser = {
-      ...userData,
-      token,
+      email: authResponse.email,
+      role: authResponse.role || "USER",
+      accessToken: authResponse.accessToken,
     };
 
     localStorage.setItem("user", JSON.stringify(authUser));
     setUser(authUser);
 
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    api.defaults.headers.common["Authorization"] =
+      `Bearer ${authResponse.accessToken}`;
   };
 
+  // Logout
   const logout = () => {
     localStorage.removeItem("user");
     setUser(null);
@@ -72,6 +72,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// Custom hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

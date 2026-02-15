@@ -1,5 +1,6 @@
 package com.carrental.auth_service.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,10 +22,12 @@ public class Booking {
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "car_id", nullable = false)
+    @JsonIgnoreProperties({"bookings"})
     private Car car;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"bookings"})
     private User user;
 
     @Column(nullable = false)

@@ -10,6 +10,10 @@ import MyBookings from "./pages/MyBookings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AdminBookings from "./pages/admin_pages/AdminBookings";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import CarManagement from "./pages/admin_pages/CarManagement";
+import BookingManagement from "./pages/admin_pages/BookingManagement";
 
 export default function App() {
   return (
@@ -18,12 +22,14 @@ export default function App() {
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/cars" element={<Cars />} />
           <Route path="/cars/:id" element={<CarDetails />} />
 
+          {/* Protected user routes */}
           <Route
             path="/booking/:carId"
             element={
@@ -32,7 +38,6 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/my-bookings"
             element={
@@ -41,9 +46,44 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Admin routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/bookings"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminBookings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/cars"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <CarManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/bookings-management"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <BookingManagement />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
 
+      {/* Toast notifications */}
       <ToastContainer
         position="top-right"
         autoClose={2000}

@@ -16,6 +16,7 @@ const BookCar = () => {
   const [error, setError] = useState("");
   const [bookingLoading, setBookingLoading] = useState(false);
 
+  // Redirect unauthenticated users to login
   useEffect(() => {
     if (!loading && !user) {
       navigate("/login", {
@@ -25,6 +26,7 @@ const BookCar = () => {
     }
   }, [loading, user, navigate, location]);
 
+  // Fetch car details
   useEffect(() => {
     if (!carId) {
       setError("Invalid car selected");
@@ -46,7 +48,12 @@ const BookCar = () => {
 
   const handleBooking = async () => {
     if (!startDate || !endDate) {
-      setError("Please select start and end dates");
+      setError("Please select both start and end dates");
+      return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      setError("Start date cannot be after end date");
       return;
     }
 
@@ -77,7 +84,9 @@ const BookCar = () => {
     }
   };
 
-  if (loading) return null;
+  if (loading) return <p className="text-gray-400">Loading...</p>;
+
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <div className="p-6 max-w-md mx-auto bg-gray-800 rounded-xl shadow">
@@ -104,6 +113,7 @@ const BookCar = () => {
         className="border p-2 w-full mb-3 rounded bg-gray-900 text-white"
         value={startDate}
         onChange={(e) => setStartDate(e.target.value)}
+        min={today}
       />
 
       <input
@@ -111,6 +121,7 @@ const BookCar = () => {
         className="border p-2 w-full mb-4 rounded bg-gray-900 text-white"
         value={endDate}
         onChange={(e) => setEndDate(e.target.value)}
+        min={startDate || today}
       />
 
       <button

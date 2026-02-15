@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { getCarById } from "../services/carService";
 import { createBooking } from "../services/bookingService";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 export default function Booking() {
   const { carId } = useParams();
@@ -39,12 +40,9 @@ export default function Booking() {
 
   const calculateDays = () => {
     if (!startDate || !endDate) return 0;
-
     const start = new Date(startDate);
     const end = new Date(endDate);
-
     if (end < start) return 0;
-
     const diff = (end - start) / (1000 * 60 * 60 * 24);
     return Math.floor(diff) + 1;
   };
@@ -53,7 +51,10 @@ export default function Booking() {
   const totalPrice = car ? days * car.pricePerDay : 0;
 
   const handleBooking = async () => {
-    if (!days || !car) return;
+    if (!days || !car) {
+      setError("Please select valid dates");
+      return;
+    }
 
     try {
       setBookingLoading(true);
@@ -67,17 +68,16 @@ export default function Booking() {
         endDate,
       });
 
-      alert("Booking confirmed 🚗");
+      toast.success("Booking confirmed 🚗");
       navigate("/my-bookings");
     } catch (err) {
       console.error(err);
-
       const msg =
         typeof err.response?.data === "string"
           ? err.response.data
           : err.response?.data?.message || "Booking failed";
-
       setError(msg);
+      toast.error(msg);
     } finally {
       setBookingLoading(false);
     }
@@ -91,6 +91,7 @@ export default function Booking() {
     return <p className="text-center py-20 text-red-400">{error}</p>;
   }
 
+  const today = new Date().toISOString().split("T")[0];
   const safeCarId = car?.id ?? car?._id;
 
   return (
@@ -125,6 +126,7 @@ export default function Booking() {
             <input
               type="date"
               value={startDate}
+              min={today}
               onChange={(e) => setStartDate(e.target.value)}
               className="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-3"
             />
@@ -137,6 +139,7 @@ export default function Booking() {
             <input
               type="date"
               value={endDate}
+              min={startDate || today}
               onChange={(e) => setEndDate(e.target.value)}
               className="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-3"
             />

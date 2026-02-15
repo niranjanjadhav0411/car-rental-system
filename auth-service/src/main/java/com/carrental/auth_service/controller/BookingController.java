@@ -29,11 +29,6 @@ public class BookingController {
             Authentication authentication
     ) {
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Unauthorized");
-        }
-
         LocalDate startDate = request.getStartDate();
         LocalDate endDate = request.getEndDate();
 
@@ -65,7 +60,6 @@ public class BookingController {
                     .body("Car is already booked for the selected dates");
         }
 
-        // 💰 Calculate total
         long totalDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
         double totalPrice = totalDays * car.getPricePerDay();
 
@@ -79,19 +73,12 @@ public class BookingController {
                 .status(BookingStatus.PENDING)
                 .build();
 
-        Booking savedBooking = bookingRepository.save(booking);
-
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(savedBooking);
+                .body(bookingRepository.save(booking));
     }
 
     @GetMapping("/my")
     public ResponseEntity<?> myBookings(Authentication authentication) {
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Unauthorized");
-        }
 
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -99,5 +86,33 @@ public class BookingController {
         List<Booking> bookings = bookingRepository.findByUser(user);
 
         return ResponseEntity.ok(bookings);
+    }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelBooking(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        if (!booking.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You cannot cancel this booking");
+        }
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            return ResponseEntity.badRequest()
+                    .body("Booking already cancelled");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
+
+        return ResponseEntity.ok("Booking cancelled successfully");
     }
 }

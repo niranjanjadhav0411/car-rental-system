@@ -22,13 +22,22 @@ public class BookingService {
     private final CarRepository carRepository;
     private final UserRepository userRepository;
 
+    // ================= CREATE BOOKING =================
     public Booking createBooking(BookingRequest request, String userEmail) {
 
         LocalDate startDate = request.getStartDate();
         LocalDate endDate = request.getEndDate();
 
-        if (startDate.isAfter(endDate) || startDate.isBefore(LocalDate.now())) {
-            throw new RuntimeException("Invalid booking dates");
+        if (startDate == null || endDate == null) {
+            throw new RuntimeException("Start and end dates are required");
+        }
+
+        if (startDate.isAfter(endDate)) {
+            throw new RuntimeException("End date cannot be before start date");
+        }
+
+        if (startDate.isBefore(LocalDate.now())) {
+            throw new RuntimeException("Start date cannot be in the past");
         }
 
         Car car = carRepository.findById(request.getCarId())
@@ -51,13 +60,15 @@ public class BookingService {
         long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
         double totalPrice = days * car.getPricePerDay();
 
-        Booking booking = new Booking();
-        booking.setCar(car);
-        booking.setUser(user);
-        booking.setStartDate(startDate);
-        booking.setEndDate(endDate);
-        booking.setTotalDays((int) days);
-        booking.setTotalPrice(totalPrice);
+        Booking booking = Booking.builder()
+                .car(car)
+                .user(user)
+                .startDate(startDate)
+                .endDate(endDate)
+                .totalDays((int) days)
+                .totalPrice(totalPrice)
+                .status(BookingStatus.PENDING)
+                .build();
 
         return bookingRepository.save(booking);
     }
@@ -93,6 +104,8 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
+        booking.getCar().setAvailable(true);
+
         return booking;
     }
 
@@ -113,7 +126,6 @@ public class BookingService {
 
         if (status == BookingStatus.CONFIRMED) {
 
-            // prevent overlapping approvals
             List<Booking> conflicts = bookingRepository.findConflictingBookings(
                     booking.getCar().getId(),
                     booking.getStartDate(),

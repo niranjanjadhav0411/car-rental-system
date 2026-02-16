@@ -3,6 +3,8 @@ package com.carrental.auth_service.repository;
 import com.carrental.auth_service.entity.Booking;
 import com.carrental.auth_service.entity.BookingStatus;
 import com.carrental.auth_service.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,6 +19,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     Optional<Booking> findByIdAndUser_Email(Long id, String email);
 
+    Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
+
     @Query("""
         SELECT b FROM Booking b
         WHERE b.car.id = :carId
@@ -29,4 +33,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("endDate") LocalDate endDate,
             @Param("statuses") List<BookingStatus> statuses
     );
+
+    // Total revenue from confirmed bookings
+    @Query("SELECT COALESCE(SUM(b.totalPrice), 0) FROM Booking b WHERE b.status = 'CONFIRMED'")
+    Double getTotalRevenue();
+
+    // Count bookings by status
+    Long countByStatus(BookingStatus status);
 }

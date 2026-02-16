@@ -21,7 +21,12 @@ export default function CarDetails() {
         const carData = await getCarById(id);
         setCar(carData);
       } catch (err) {
-        setError("Car not found");
+        console.error("Failed to fetch car:", err);
+        if (err.response?.status === 401) {
+          setError("Unauthorized. Please login again.");
+        } else {
+          setError("Car not found");
+        }
       } finally {
         setLoading(false);
       }
@@ -31,39 +36,54 @@ export default function CarDetails() {
   }, [id]);
 
   if (loading) {
-    return <p className="text-center py-20">Loading car details...</p>;
+    return (
+      <p className="text-center py-20 text-gray-400">Loading car details...</p>
+    );
   }
 
-  if (error) {
-    return <p className="text-center py-20 text-red-400">{error}</p>;
+  if (error || !car) {
+    return (
+      <p className="text-center py-20 text-red-400">
+        {error || "Car not found"}
+      </p>
+    );
   }
+
+  const carId = car.id ?? car._id;
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-10">
-      <Link to="/cars" className="text-cyan-400">
-        ← Back
+      <Link to="/cars" className="text-cyan-400 hover:underline">
+        ← Back to Cars
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6 items-center">
         <img
           src={
             car.image ||
-            "https://images.unsplash.com/photo-1555215695-3004980ad54e"
+            "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80"
           }
           alt={`${car.brand} ${car.model}`}
-          className="rounded-xl"
+          className="rounded-xl w-full object-cover h-80 lg:h-full"
         />
 
-        <div>
-          <h1 className="text-3xl font-bold text-cyan-400">
-            {car.brand} {car.model}
-          </h1>
+        <div className="flex flex-col justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-cyan-400">
+              {car.brand} {car.model}
+            </h1>
 
-          <p className="mt-4 text-xl">₹{car.pricePerDay} / day</p>
+            <p className="mt-4 text-xl text-gray-200">
+              Price per day:{" "}
+              <span className="font-semibold">₹{car.pricePerDay}</span>
+            </p>
+
+            {car.type && <p className="mt-2 text-gray-400">Type: {car.type}</p>}
+          </div>
 
           <Link
-            to={`/booking/${car.id ?? car._id}`}
-            className="mt-6 inline-block bg-cyan-600 px-6 py-3 rounded-xl"
+            to={`/booking/${carId}`}
+            className="mt-6 inline-block bg-cyan-600 px-6 py-3 rounded-xl hover:bg-cyan-500 transition text-white font-semibold text-center"
           >
             Book This Car
           </Link>

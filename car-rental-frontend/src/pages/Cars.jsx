@@ -11,10 +11,20 @@ export default function Cars() {
     const fetchCars = async () => {
       try {
         const carsData = await getAllCars();
-        setCars(Array.isArray(carsData) ? carsData : []);
+
+        if (Array.isArray(carsData)) {
+          setCars(carsData);
+        } else {
+          setCars([]);
+        }
       } catch (err) {
-        console.error("Failed to load cars", err);
-        setError("Unable to load cars");
+        console.error("Failed to load cars:", err);
+
+        if (err.response?.status === 401) {
+          setError("Unauthorized. Please login again.");
+        } else {
+          setError("Unable to load cars");
+        }
       } finally {
         setLoading(false);
       }
@@ -52,20 +62,20 @@ export default function Cars() {
           return (
             <div
               key={carId}
-              className="bg-gray-900 rounded-2xl overflow-hidden shadow-lg hover:scale-[1.02] transition"
+              className="bg-gray-900 rounded-2xl overflow-hidden shadow-lg hover:scale-105 transition transform duration-300"
             >
               <img
                 loading="lazy"
                 src={
                   car.image ||
-                  "https://images.unsplash.com/photo-1555215695-3004980ad54e"
+                  "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80"
                 }
                 alt={`${car.brand} ${car.model}`}
                 className="h-48 w-full object-cover"
               />
 
               <div className="p-5 space-y-2">
-                <h3 className="text-lg font-semibold">
+                <h3 className="text-lg font-semibold text-white">
                   {car.brand} {car.model}
                 </h3>
 
@@ -73,7 +83,7 @@ export default function Cars() {
 
                 <Link
                   to={`/cars/${carId}`}
-                  className="block mt-3 text-center bg-cyan-600 hover:bg-cyan-500 py-2 rounded-xl font-semibold transition"
+                  className="block mt-3 text-center bg-cyan-600 hover:bg-cyan-500 py-2 rounded-xl font-semibold text-white transition"
                 >
                   View Details
                 </Link>

@@ -1,9 +1,8 @@
 package com.carrental.auth_service.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +11,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Table(name = "cars")
 public class Car {
 
@@ -33,10 +33,12 @@ public class Car {
     @Column(nullable = false)
     private boolean available = true;
 
+    @JsonIgnore
     @OneToMany(
             mappedBy = "car",
             cascade = CascadeType.ALL,
-            orphanRemoval = true
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
     )
     private List<Booking> bookings = new ArrayList<>();
 }
